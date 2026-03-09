@@ -63,7 +63,8 @@ Linux and macOS binaries have **no file extension**. After downloading:
 
 - The CLI uses a local dump file. By default it is stored at **`~/.iplookup/dump.bin`** (Linux/macOS) or **`%USERPROFILE%\.iplookup\dump.bin`** (Windows).
 - **First run:** If the dump does not exist, the CLI downloads it automatically from the project.
-- **Refresh:** If the dump is older than 3 hours, the CLI will download a new one automatically when you run a command.
+- **Refresh:** If the dump is older than 3 hours, the CLI tries to download a new one when you run a command.
+- **Offline / update failure:** If the download fails (no internet, server down, etc.), the CLI **still works** using the existing dump file. You only need a working connection for the first run or when you want to refresh; after that, lookups work with the local copy even when outdated.
 - To use a custom dump path: `./iplookup-linux-amd64 --dump /path/to/dump.bin check 1.2.3.4`
 
 ## Commands
@@ -76,16 +77,26 @@ Linux and macOS binaries have **no file extension**. After downloading:
 | `asn &lt;number&gt;` | Look up ASN reputation |
 | `update` | Download latest dump from an admin server (optional; auto-download handles default source) |
 
-Add `--json` before the command for machine-readable output.
+Add `--json` before the command for machine-readable output.  
+Add `--verbose` (or `-v`) to get the full visual output with colored details, score bars, and dump metadata.
+
+By default, `check` outputs only the numerical prediction score — ideal for scripting and piping.
 
 ## Examples
 
 ```bash
-# Single IP lookup
+# Single IP lookup (outputs just the score, e.g. "0.8923")
 ./iplookup-linux-amd64 check 185.220.101.45
 
-# Batch lookup from file
+# Verbose output with full visual details
+./iplookup-linux-amd64 --verbose check 185.220.101.45
+./iplookup-linux-amd64 -v check 185.220.101.45
+
+# Batch lookup from file (one score per line)
 ./iplookup-linux-amd64 check --file ips.txt
+
+# Batch lookup with full table
+./iplookup-linux-amd64 -v check --file ips.txt
 
 # Dump info
 ./iplookup-linux-amd64 info
