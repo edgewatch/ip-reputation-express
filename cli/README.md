@@ -1,4 +1,4 @@
-# iplookup CLI — User Guide
+# ip-express CLI — User Guide
 
 Command-line tool for IP reputation lookups using the Edgewatch offline dump. On first run (or when the local dump is older than 3 hours), the CLI automatically downloads the latest dump from the project.
 
@@ -9,14 +9,14 @@ Command-line tool for IP reputation lookups using the Edgewatch offline dump. On
 
 | Platform        | Asset / raw file |
 |----------------|-------------------|
-| Linux (amd64)  | `iplookup-linux-amd64` |
-| Linux (arm64)  | `iplookup-linux-arm64` |
-| macOS (Intel)  | `iplookup-darwin-amd64` |
-| macOS (Apple Silicon) | `iplookup-darwin-arm64` |
-| Windows (amd64) | `iplookup-windows-amd64.exe` |
+| Linux (amd64)  | `ip-express-linux-amd64` |
+| Linux (arm64)  | `ip-express-linux-arm64` |
+| macOS (Intel)  | `ip-express-darwin-amd64` |
+| macOS (Apple Silicon) | `ip-express-darwin-arm64` |
+| Windows (amd64) | `ip-express-windows-amd64.exe` |
 
 Raw URL example (Linux amd64):  
-`https://raw.githubusercontent.com/edgewatch/ip-reputation-express/main/cli/iplookup-linux-amd64`
+`https://raw.githubusercontent.com/edgewatch/ip-reputation-express/main/cli/ip-express-linux-amd64`
 
 Checksums: `cli/checksums.txt` (or in release assets).
 
@@ -28,44 +28,44 @@ Linux and macOS binaries have **no file extension**. After downloading:
 
 1. Make the file executable:
    ```bash
-   chmod +x iplookup-linux-amd64
+   chmod +x ip-express-linux-amd64
    ```
-   (Use the filename that matches your platform, e.g. `iplookup-darwin-arm64` on Apple Silicon.)
+   (Use the filename that matches your platform, e.g. `ip-express-darwin-arm64` on Apple Silicon.)
 
 2. Run it:
    ```bash
-   ./iplookup-linux-amd64 check 8.8.8.8
+   ./ip-express-linux-amd64 check 8.8.8.8
    ```
 
 3. **(Optional)** Install to your PATH:
    ```bash
-   sudo mv iplookup-linux-amd64 /usr/local/bin/iplookup
-   iplookup check 8.8.8.8
+   sudo mv ip-express-linux-amd64 /usr/local/bin/ip-express
+   ip-express check 8.8.8.8
    ```
    Or for your user only:
    ```bash
    mkdir -p ~/.local/bin
-   mv iplookup-linux-amd64 ~/.local/bin/iplookup
+   mv ip-express-linux-amd64 ~/.local/bin/ip-express
    export PATH="$HOME/.local/bin:$PATH"
-   iplookup check 8.8.8.8
+   ip-express check 8.8.8.8
    ```
 
 ### Windows
 
-1. Download `iplookup-windows-amd64.exe`.
+1. Download `ip-express-windows-amd64.exe`.
 2. Run from Command Prompt or PowerShell:
    ```cmd
-   iplookup-windows-amd64.exe check 8.8.8.8
+   ip-express-windows-amd64.exe check 8.8.8.8
    ```
    Optionally add the folder containing the exe to your `PATH`.
 
 ## First run and dump file
 
-- The CLI uses a local dump file. By default it is stored at **`~/.iplookup/dump.bin`** (Linux/macOS) or **`%USERPROFILE%\.iplookup\dump.bin`** (Windows).
+- The CLI uses a local dump file. By default it is stored at **`~/.ip-express/dump.bin`** (Linux/macOS) or **`%USERPROFILE%\.ip-express\dump.bin`** (Windows).
 - **First run:** If the dump does not exist, the CLI downloads it automatically from the project.
 - **Refresh:** If the dump is older than 3 hours, the CLI tries to download a new one when you run a command.
 - **Offline / update failure:** If the download fails (no internet, server down, etc.), the CLI **still works** using the existing dump file. You only need a working connection for the first run or when you want to refresh; after that, lookups work with the local copy even when outdated.
-- To use a custom dump path: `./iplookup-linux-amd64 --dump /path/to/dump.bin check 1.2.3.4`
+- To use a custom dump path: `./ip-express-linux-amd64 --dump /path/to/dump.bin check 1.2.3.4`
 
 ## Commands
 
@@ -86,26 +86,26 @@ By default, `check` outputs only the numerical prediction score — ideal for sc
 
 ```bash
 # Single IP lookup (outputs just the score, e.g. "0.8923")
-./iplookup-linux-amd64 check 185.220.101.45
+./ip-express-linux-amd64 check 185.220.101.45
 
 # Verbose output with full visual details
-./iplookup-linux-amd64 --verbose check 185.220.101.45
-./iplookup-linux-amd64 -v check 185.220.101.45
+./ip-express-linux-amd64 --verbose check 185.220.101.45
+./ip-express-linux-amd64 -v check 185.220.101.45
 
 # Batch lookup from file (one score per line)
-./iplookup-linux-amd64 check --file ips.txt
+./ip-express-linux-amd64 check --file ips.txt
 
 # Batch lookup with full table
-./iplookup-linux-amd64 -v check --file ips.txt
+./ip-express-linux-amd64 -v check --file ips.txt
 
 # Dump info
-./iplookup-linux-amd64 info
+./ip-express-linux-amd64 info
 
 # ASN reputation
-./iplookup-linux-amd64 asn 60729
+./ip-express-linux-amd64 asn 60729
 
 # JSON output
-./iplookup-linux-amd64 --json check 8.8.8.8
+./ip-express-linux-amd64 --json check 8.8.8.8
 ```
 
 ## Verdicts
