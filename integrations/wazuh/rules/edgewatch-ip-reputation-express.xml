@@ -1,0 +1,115 @@
+<!--
+  Wazuh rules: Edgewatch IP Reputation Express
+  Deploy to: /var/ossec/etc/rules/edgewatch-ip-reputation-express.xml
+
+  Rule ID range reserved:
+    99383–99384  SSH public-IP triggers
+    99389        Base integration event (parent of 99390–99394)
+    99390–99394  Edgewatch verdict / enrichment rules
+
+  Architecture: 99389 acts as a base rule; all verdict rules inherit via <if_sid>.
+  This means verdict rules only fire if 99389 already matched, reducing CPU overhead
+  and making all edgewatch rules easy to disable by disabling 99389.
+-->
+
+<!-- ── SSH triggers ─────────────────────────────────────────────────────── -->
+<!--
+  Fire the integration for SSH authentication events from public IPs.
+  The pcre2 negative lookahead excludes RFC-1918, loopback, and link-local ranges.
+  Note: public IP filtering is also enforced in Python (is_public_ipv4),
+  these rules serve as an early pre-filter at the Wazuh rules level.
+-->
+<group name="local,syslog,sshd,">
+
+  <rule id="99383" level="5">
+    <if_sid>5716</if_sid>
+    <match type="pcre2">\b(?!(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.|169\.254\.))\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b</match>
+    <description>sshd: Authentication failed from public IP $(srcip).</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+  <rule id="99384" level="5">
+    <if_sid>5715</if_sid>
+    <match type="pcre2">\b(?!(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.|169\.254\.))\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b</match>
+    <description>sshd: Authentication succeeded from public IP $(srcip).</description>
+    <group>authentication_success,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+</group>
+
+
+<!-- ── Edgewatch IP Reputation Express enrichment rules ─────────────────── -->
+<group name="integration,edgewatch_offline,">
+
+  <!--
+    Base rule: parent of all Edgewatch verdict rules.
+    Fires for every event emitted by custom-edgewatch-ip-reputation-express.py.
+    Level 3 (informational) — does not generate alerts or emails on its own.
+    All child rules use <if_sid>99389</if_sid> and only evaluate if this fires.
+  -->
+  <rule id="99389" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="integration">edgewatch_offline</field>
+    <description>Edgewatch IP Reputation Express: enrichment event.</description>
+  </rule>
+
+  <!--
+    Level 12 — BLACKLISTED: IP is a direct hit in the Edgewatch CTI dump.
+    Certainty is 100% (deterministic, not probabilistic).
+    Level 12 = "high importance event" — triggers email alerts if configured.
+  -->
+  <rule id="99390" level="12">
+    <if_sid>99389</if_sid>
+    <field name="edgewatch_offline.verdict">^BLACKLISTED$</field>
+    <description>Edgewatch IP Reputation Express: BLACKLISTED source IP $(edgewatch_offline.source.srcip) — known malicious (certain).</description>
+    <group>attack,ip-reputation,edgewatch_blacklisted,</group>
+  </rule>
+
+  <!--
+    Level 7 — SUSPICIOUS: probabilistic score >= 65/100.
+    IP is not in the blacklist but neighborhood signals (ASN, /24 density) are high.
+    Level 7 = minimum for email notifications by default.
+  -->
+  <rule id="99391" level="7">
+    <if_sid>99389</if_sid>
+    <field name="edgewatch_offline.verdict">^SUSPICIOUS$</field>
+    <description>Edgewatch IP Reputation Express: suspicious source IP $(edgewatch_offline.source.srcip) — score $(edgewatch_offline.fraud_score)/100.</description>
+    <group>ip-reputation,edgewatch_suspicious,</group>
+  </rule>
+
+  <!--
+    Level 7 — High /24 subnet density: >= 50 IPs in the /24 are blacklisted.
+    Even if this specific IP is not listed, the subnet is heavily malicious.
+    Threshold: 50/256 = ~20% of the subnet.
+  -->
+  <rule id="99392" level="7">
+    <if_sid>99389</if_sid>
+    <field name="edgewatch_offline.density_24" type="pcre2">^([5-9][0-9]|[1-9][0-9]{2,})$</field>
+    <description>Edgewatch IP Reputation Express: high /24 subnet density for $(edgewatch_offline.source.srcip) — $(edgewatch_offline.density_24)/256 blacklisted.</description>
+    <group>ip-reputation,</group>
+  </rule>
+
+  <!--
+    Level 3 — Informational enrichment: lookup succeeded (any verdict).
+    Useful for dashboards, threat hunting, and correlation — does not alert.
+  -->
+  <rule id="99393" level="3">
+    <if_sid>99389</if_sid>
+    <field name="edgewatch_offline.found">^1$</field>
+    <description>Edgewatch IP Reputation Express: enrichment for $(edgewatch_offline.source.srcip) — verdict $(edgewatch_offline.verdict), score $(edgewatch_offline.fraud_score)/100.</description>
+    <group>ip-reputation,</group>
+  </rule>
+
+  <!--
+    Level 6 — Lookup error: binary failed, timed out, or dump was missing.
+    Visible in the dashboard for operational troubleshooting.
+    Non-blocking: does not affect other alerts.
+  -->
+  <rule id="99394" level="6">
+    <if_sid>99389</if_sid>
+    <field name="edgewatch_offline.lookup_error">^true$</field>
+    <description>Edgewatch IP Reputation Express: lookup failed for source IP $(edgewatch_offline.source.srcip).</description>
+    <group>ip-reputation,edgewatch_lookup_error,</group>
+  </rule>
+
+</group>

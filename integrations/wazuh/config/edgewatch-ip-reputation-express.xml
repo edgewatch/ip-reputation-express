@@ -1,0 +1,24 @@
+<!--
+  Add this <integration> block to /var/ossec/etc/ossec.conf
+  inside the <ossec_config> root element.
+
+  Uses <group> instead of <rule_id> so new rules are covered automatically
+  without editing this file.
+
+  CUSTOMIZE THE GROUPS FOR YOUR ENVIRONMENT:
+  The groups listed below are common examples. Add or remove groups depending
+  on the sources you have active. To see which groups exist in your environment:
+    Wazuh Dashboard → Threat Hunting → Events → filter by rule.groups
+
+  Common groups:
+    authentication_failed  — SSH, PAM, Dovecot, FTP login failures
+    authentication_success — successful logins from public IPs
+    fortigate              — Fortinet firewall traffic events
+    web                    — Nginx/Apache web server access
+    windows                — Windows authentication events (4625, etc.)
+-->
+<integration>
+  <name>custom-edgewatch-ip-reputation-express.py</name>
+  <group>authentication_failed,authentication_success,fortigate,web,windows</group>
+  <alert_format>json</alert_format>
+</integration>
